@@ -23,6 +23,7 @@ async function server() {
         const database = client.db('car_today');
         const carsCollection = database.collection('cars');
         const ordersCollection = database.collection('orders');
+        const reviewsCollection = database.collection('reviews');
 
         // cars get api
         app.get('/cars', async (req, res) => {
@@ -62,6 +63,28 @@ async function server() {
             const orders = await cursor.toArray();
             res.json(orders);
         });
+
+        // order delete api
+        app.delete('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await ordersCollection.deleteOne(query);
+            res.json(result);
+        });
+
+        // reviews post api
+        app.post('/reviews', async (req, res) => {
+            const review = req.body.data;
+            const result = await reviewsCollection.insertOne(review);
+            res.json(result);
+        });
+
+        // get reviews
+        app.get('/reviews', async (req, res) => {
+            const cursor = reviewsCollection.find({});
+            const reviews = await cursor.toArray();
+            res.json(reviews);
+        })
     }
     finally {
         // await client.close();
