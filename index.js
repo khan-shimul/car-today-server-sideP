@@ -22,8 +22,9 @@ async function server() {
 
         const database = client.db('car_today');
         const carsCollection = database.collection('cars');
+        const ordersCollection = database.collection('orders');
 
-        // find cars get api
+        // cars get api
         app.get('/cars', async (req, res) => {
             const cursor = carsCollection.find({});
             const cars = await cursor.toArray();
@@ -37,6 +38,21 @@ async function server() {
             const result = await carsCollection.insertOne(cars);
             res.json(result);
         });
+
+        // find single car
+        app.get('/cars/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const car = await carsCollection.findOne(query);
+            res.send(car);
+        });
+
+        // orders post api
+        app.post('/orders', async (req, res) => {
+            const order = req.body.data;
+            const result = await ordersCollection.insertOne(order);
+            res.json(result);
+        })
     }
     finally {
         // await client.close();
