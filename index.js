@@ -52,7 +52,16 @@ async function server() {
             const order = req.body.data;
             const result = await ordersCollection.insertOne(order);
             res.json(result);
-        })
+        });
+
+        // find order using query get api
+        app.get('/orders', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const cursor = ordersCollection.find(query);
+            const orders = await cursor.toArray();
+            res.json(orders);
+        });
     }
     finally {
         // await client.close();
