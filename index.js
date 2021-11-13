@@ -64,6 +64,26 @@ async function server() {
             res.json(result);
         });
 
+        // orders get api
+        app.get('/all-orders', async (req, res) => {
+            const cursor = ordersCollection.find({});
+            const orders = await cursor.toArray();
+            res.send(orders);
+        });
+
+        // 
+
+        // order status update api
+        app.put('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: { status: 'Shipped' }
+            };
+            const result = await ordersCollection.updateOne(filter, updateDoc);
+            res.json(result);
+        })
+
         // find order using query get api
         app.get('/orders', async (req, res) => {
             const email = req.query.email;
