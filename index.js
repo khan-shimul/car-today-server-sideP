@@ -12,7 +12,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const serviceAccount = require('./car-today-firebase-adminsdk.json');
+const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUT);
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
