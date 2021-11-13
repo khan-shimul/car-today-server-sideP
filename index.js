@@ -41,6 +41,14 @@ async function server() {
             res.json(result);
         });
 
+        // cars delete api
+        app.delete('/cars/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await carsCollection.deleteOne(query);
+            res.json(result);
+        })
+
         // find single car
         app.get('/cars/:id', async (req, res) => {
             const id = req.params.id;
