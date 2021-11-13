@@ -3,6 +3,7 @@ const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const app = express();
 const ObjectId = require('mongodb').ObjectId;
+const admin = require("firebase-admin");
 require('dotenv').config()
 
 const port = process.env.PORT || 5000;
@@ -11,9 +12,31 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+const serviceAccount = require('./car-today-firebase-adminsdk.json');
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.je3vw.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+// verify firebase idToken
+async function verifyToken(req, res, next) {
+    if (req.headers?.authorization?.startsWith('Bearer ')) {
+        const token = req.headers.authorization.split('Bearer ')[1];
+
+        try {
+            const decodeUser = await admin.auth().verifyIdToken(token);
+            req.decodeEmail = decodeUser.email;
+        }
+        catch {
+
+        }
+    }
+
+    next();
+}
 
 
 async function server() {
@@ -42,7 +65,7 @@ async function server() {
         });
 
         // cars delete api
-        app.delete('/cars/:id', async (req, res) => {
+        app.delete('/cars/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await carsCollection.deleteOne(query);
@@ -65,7 +88,7 @@ async function server() {
         });
 
         // orders get api
-        app.get('/all-orders', async (req, res) => {
+        app.get('/all-orders', verifyToken, async (req, res) => {
             const cursor = ordersCollection.find({});
             const orders = await cursor.toArray();
             res.send(orders);
@@ -143,12 +166,21 @@ async function server() {
         });
 
         // make admin role
-        app.put('/users/admin', async (req, res) => {
+        app.put('/users/admin', verifyToken, async (req, res) => {
             const user = req.body;
-            const filter = { email: user.email };
-            const updateDoc = { $set: { role: 'admin' } };
-            const result = await usersCollection.updateOne(filter, updateDoc);
-            res.json(result)
+            const requesterEmail = req.decodeEmail;
+            if (requesterEmail) {
+                const requesterAccount = await usersCollection.findOne({ email: requesterEmail });
+                if (requesterAccount.role === 'admin') {
+                    const filter = { email: user.email };
+                    const updateDoc = { $set: { role: 'admin' } };
+                    const result = await usersCollection.updateOne(filter, updateDoc);
+                    res.json(result)
+                }
+            }
+            else {
+                res.status(403).json({ error: 'Your dont have access' })
+            }
         });
     }
     finally {
