@@ -71,8 +71,6 @@ async function server() {
             res.send(orders);
         });
 
-        // 
-
         // order status update api
         app.put('/orders/:id', async (req, res) => {
             const id = req.params.id;
