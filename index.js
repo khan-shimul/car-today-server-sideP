@@ -24,6 +24,7 @@ async function server() {
         const carsCollection = database.collection('cars');
         const ordersCollection = database.collection('orders');
         const reviewsCollection = database.collection('reviews');
+        const usersCollection = database.collection('users');
 
         // cars get api
         app.get('/cars', async (req, res) => {
@@ -84,7 +85,45 @@ async function server() {
             const cursor = reviewsCollection.find({});
             const reviews = await cursor.toArray();
             res.json(reviews);
+        });
+
+        // post users
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.json(result);
+        });
+
+        // check admin role
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            let isAdmin = false;
+            if (user?.role === 'admin') {
+                isAdmin = true;
+            }
+            res.json({ admin: isAdmin });
         })
+
+        // put users api
+        app.put('/users', async (req, res) => {
+            const user = req.body;
+            const filter = { email: user.email };
+            const options = { upsert: true };
+            const updateDoc = { $set: user };
+            const result = await usersCollection.updateOne(filter, updateDoc, options);
+            res.json(result);
+        });
+
+        // make admin role
+        app.put('/users/admin', async (req, res) => {
+            const user = req.body;
+            const filter = { email: user.email };
+            const updateDoc = { $set: { role: 'admin' } };
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.json(result)
+        });
     }
     finally {
         // await client.close();
